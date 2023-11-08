@@ -264,7 +264,7 @@ program main
   +(1.-fc)* v_old(i,j,k)*(u_old(i,j+1,k)-u_old(i,j-1,k))/dy*0.5) ! 2nd central scheme
 
   ! convection_w
-  u(i,j,k)=u_old(i,j,k)-dt*( &
+  u(i,j,k)=u(i,j,k)-dt*( &
           fc*( max(w_old(i,j,k),0.)*(u_old(i,j,k)-u_old(i,j,k-1))/dz   &      ! w>0 1st upwind scheme 
               +min(w_old(i,j,k),0.)*(u_old(i,j,k-1)-u_old(i,j,k))/dz ) &      ! w<0 1st upwind scheme
   +(1.-fc)* w_old(i,j,k)*(u_old(i,j,k+1)-u_old(i,j,k-1))/dz*0.5)    ! 2nd central scheme
