@@ -341,7 +341,7 @@ program main
                 *xnue*(porosity(i+1,j,k)-porosity(i-1,j,k))/dx*.5                            &
              +( (v_old(i,j+1,k)-v_old(i,j-1,k))/dy*.5+(v_old(i,j+1,k)-v_old(i,j-1,k))/dy*.5) &
                 *xnue*(porosity(i,j+1,k)-porosity(i,j-1,k))/dy*.5                            &
-             +( (w_old(i,j,k+1)-w_old(i,j,k-1))/dz*.5+(v_old(i,j+1,k)-v_old(i,j-1,k))/dy*.5) &
+             +( (v_old(i,j,k+1)-v_old(i,j,k-1))/dz*.5+(w_old(i,j+1,k)-w_old(i,j-1,k))/dy*.5) &
                 *xnue*(porosity(i,j,k+1)-porosity(i,j,k-1))/dz*.5                            &
            + div(i,j,k)*xnue*(porosity(i,j+1,k)-porosity(i,j-1,k))/dy*0.5*(-0./3.)           &
          )/porosity(i,j,k)
