@@ -1,0 +1,27 @@
+&physical
+xnue            = 0.025000
+density         = 1.000000
+width           = 2.0
+height          = 2.0
+depth           = 2.0
+time            = 0.5
+inlet_velocity  = 1.5
+outlet_pressure = 0.000000
+AoA             = 0.000000
+/
+&file_control
+istep_out       = 100000
+/
+&grid_control
+istep_max       = 250
+/
+&porosity_control
+thickness       = 1.5
+/
+&calculation_method
+nonslip         = .false.
+/
+&directory_control
+output_folder   = "sphere_128"
+csv_file        = "sphere_128.csv"
+/
