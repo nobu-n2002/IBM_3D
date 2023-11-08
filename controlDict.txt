@@ -13,7 +13,7 @@ AoA             = 0.000000
 istep_out       = 100000
 /
 &grid_control
-istep_max       = 250
+istep_max       = 500
 /
 &porosity_control
 thickness       = 1.5
