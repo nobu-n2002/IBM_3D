@@ -1261,6 +1261,8 @@ program main
   real:: cfl_no, pecret_no, diffusion_factor, reynolds_no
   real:: pai, distance, center_x, center_y, radius
   integer:: i, j, k
+  integer:: x, y, z
+  real:: poro_val
   real, parameter:: small=1.e-6, big=1.e6, zero=0.
   ! --- 
   
@@ -1282,12 +1284,12 @@ program main
   
   read(52,*) m,n,o
 
-  ! do k=1,o
-  !   read(52,*) ((porosity(i,j,k),i=1,m),j=1,n)
-  ! end do
-  do k=1,o
-    do j=1,n
-    read(52,*) (porosity(i,j,k),i=1,m)
+  do k = 1, o
+    do j = 1, n
+      do i = 1, m
+        read(52, *) x, y, z, poro_val
+        porosity(x+1, y+1, z+1) = poro_val
+      end do
     end do
   end do
   
