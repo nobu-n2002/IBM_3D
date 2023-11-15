@@ -1,6 +1,6 @@
 &physical
 xnue            = 0.025000  ! [m2/s]
-xlamda          = 0.000000  ! * xnue [m2/s]
+xlamda          =-0.016666  ! [m2/s]
 density         = 1.000000  ! [kg/m3]
 width           = 2.000000  ! [m]
 height          = 2.000000  ! [m]
