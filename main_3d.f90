@@ -1,7 +1,7 @@
 program main
   !$ use omp_lib
    implicit none
-   integer,parameter:: md=200, nd = 200, ld = 200   ! md, nd, ld > grid size (m,n,l)
+   integer,parameter:: md = 200, nd = 200, ld = 200   ! md, nd, ld > grid size (m,n,l)
    real:: dx, dy, dz, dt
    real:: xnue, xlamda, density, width, height, depth, time
    real:: inlet_velocity, outlet_pressure, AoA, thickness
@@ -11,6 +11,7 @@ program main
    real,dimension(0:nd):: yp
    real,dimension(0:ld):: zp
    real,dimension(0:md,0:nd,0:ld)::ap, ae, aw, an, as, at, ab, bb
+   real:: residual_u, residual_v, residual_w 
    integer:: m, n, l, istep, istep_max, iset, istep_out
    integer:: i, j, k
    character(len=50) :: output_folder
@@ -79,6 +80,10 @@ program main
   ! ----------------
   ! MAC algorithm start
   do istep = 1, istep_max
+
+    residual_u = 0.0
+    residual_v = 0.0
+    residual_w = 0.0
   
     time=istep* dt
     write(*,*)'--- time_steps= ',istep, ' --  time = ',time
@@ -86,12 +91,17 @@ program main
     do i = 0, m+1
       do j = 0, n+1
         do k = 0, l+1
+          ! residual_u = max(residual_u, abs(u(i,j,k)-u_old(i,j,k)))
+          ! residual_v = max(residual_v, abs(v(i,j,k)-v_old(i,j,k)))
+          ! residual_w = max(residual_w, abs(w(i,j,k)-w_old(i,j,k)))
           u_old(i,j,k) = u(i,j,k)
           v_old(i,j,k) = v(i,j,k)
           w_old(i,j,k) = w(i,j,k)
         end do
       end do
     end do
+
+    ! write(*,*)'velocity residual =', residual_u, residual_v, residual_w
   
     call solve_p (p, u, v, w, u_old, v_old, w_old, porosity, xnue, xlamda, &
                         density, height, thickness, yp, dx, dy, dz, dt, m, n, l)
@@ -228,7 +238,7 @@ program main
   !      +dt*xnue/(small+porosity(i,j,k))*(u_old(i,j,k+1)-u_old(i,j,k-1))*(porosity(i,j,k+1)-porosity(i,j,k-1))/dz/dz*0.25 ! non-conseved term
   
   ! divergence term
-  u(i,j,k)=u(i,j,k) +dt*xnue*(1.0 + xlamda)*(div(i+1,j,k)-div(i-1,j,k))/dx*.5
+  u(i,j,k)=u(i,j,k) +dt*(xnue + xlamda)*(div(i+1,j,k)-div(i-1,j,k))/dx*.5
 
   ! additional terms by porosity profile
   u(i,j,k)=u(i,j,k)                 &
@@ -238,7 +248,7 @@ program main
                 *xnue*(porosity(i,j+1,k)-porosity(i,j-1,k))/dy*.5                            &
              +( (u_old(i,j,k+1)-u_old(i,j,k-1))/dz*.5+(w_old(i+1,j,k)-w_old(i-1,j,k))/dx*.5) &
                 *xnue*(porosity(i,j,k+1)-porosity(i,j,k-1))/dz*.5                            &
-             + div(i,j,k)*xnue*(porosity(i+1,j,k)-porosity(i-1,j,k))/dx*0.5*xlamda         &
+             + div(i,j,k)*(porosity(i+1,j,k)-porosity(i-1,j,k))/dx*0.5*xlamda         &
          )/porosity(i,j,k)
   ! force on wall
   if (nonslip) then
@@ -275,7 +285,7 @@ program main
   v(i,j,k)=v(i,j,k) +dt*xnue*(v_old(i,j,k+1)-2.*v_old(i,j,k)+v_old(i,j,k-1))/dz/dz
   !      +dt*xnue/(small+porosity(i,j,k))*(v_old(i,j,k+1)-v_old(i,j,k-1))*(porosity(i,j,k+1)-porosity(i,j,k-1))/dz/dz*0.25 ! non-conseved term
   ! divergence term   ! L+(2/3)N = (1/3)N;(2/3) or 0(1/3)
-  v(i,j,k)=v(i,j,k) +dt*xnue*(1.0 + xlamda)*(div(i,j+1,k)-div(i,j-1,k))/dy*.5
+  v(i,j,k)=v(i,j,k) +dt*(xnue + xlamda)*(div(i,j+1,k)-div(i,j-1,k))/dy*.5
   ! additional terms by porosity profile   ! canceled for non-slip condition    ! L+(2/3)N = (1/3)N;(-1/3) or 0:(-2/3)N
   v(i,j,k)=v(i,j,k)               &
         +dt*( ( (v_old(i+1,j,k)-v_old(i-1,j,k))/dx*.5+(u_old(i,j+1,k)-u_old(i,j-1,k))/dy*.5) &
@@ -284,7 +294,7 @@ program main
                 *xnue*(porosity(i,j+1,k)-porosity(i,j-1,k))/dy*.5                            &
              +( (v_old(i,j,k+1)-v_old(i,j,k-1))/dz*.5+(w_old(i,j+1,k)-w_old(i,j-1,k))/dy*.5) &
                 *xnue*(porosity(i,j,k+1)-porosity(i,j,k-1))/dz*.5                            &
-           + div(i,j,k)*xnue*(porosity(i,j+1,k)-porosity(i,j-1,k))/dy*0.5*xlamda           &
+           + div(i,j,k)*(porosity(i,j+1,k)-porosity(i,j-1,k))/dy*0.5*xlamda           &
          )/porosity(i,j,k)
   ! force on wall
   if (nonslip) then
@@ -321,7 +331,7 @@ program main
   w(i,j,k)=w(i,j,k) +dt*xnue*(w_old(i,j,k+1)-2.*w_old(i,j,k)+w_old(i,j,k-1))/dz/dz
   !      +dt*xnue/(small+porosity(i,j))*(w_old(i,j,k+1)-w_old(i,j,k-1))*(porosity(i,j,k+1)-porosity(i,j,k-1))/dz/dz*0.25 ! non-conseved term
   ! divergence term   ! L+(2/3)N = (1/3)N;(2/3) or 0(1/3)
-  w(i,j,k)=w(i,j,k) +dt*xnue*(1.0 + xlamda)*(div(i,j,k+1)-div(i,j,k-1))/dz*.5
+  w(i,j,k)=w(i,j,k) +dt*(xnue + xlamda)*(div(i,j,k+1)-div(i,j,k-1))/dz*.5
   ! additional terms by porosity profile   ! canceled for non-slip condition    ! L+(2/3)N = (1/3)N;(-1/3) or 0:(-2/3)N
   w(i,j,k)=w(i,j,k)               &
         +dt*( ( (w_old(i+1,j,k)-w_old(i-1,j,k))/dx*.5+(u_old(i,j,k+1)-u_old(i,j,k-1))/dz*.5) &
@@ -330,12 +340,13 @@ program main
                 *xnue*(porosity(i,j+1,k)-porosity(i,j-1,k))/dy*.5                            &
              +( (w_old(i,j,k+1)-w_old(i,j,k-1))/dz*.5+(w_old(i,j,k+1)-w_old(i,j,k-1))/dz*.5) &
                 *xnue*(porosity(i,j,k+1)-porosity(i,j,k-1))/dz*.5                            &
-           + div(i,j,k)*xnue*(porosity(i,j,k+1)-porosity(i,j,k-1))/dz*0.5*xlamda           &
+           + div(i,j,k)*(porosity(i,j,k+1)-porosity(i,j,k-1))/dz*0.5*xlamda           &
          )/porosity(i,j,k)
   ! force on wall
   if (nonslip) then
     w(i,j,k)=w(i,j,k)- dt*xnue*w_old(i,j,k)/(thickness*dz)**2 *32.*porosity(i,j,k)*(1.-porosity(i,j,k))*(1.-porosity(i,j,k))
   end if
+
   end do
   end do
   end do
@@ -416,8 +427,8 @@ program main
   !$omp do
   do i = 1, m
     do k = 1, l
-      p(i,0,k)  =p(i,n,k)
-      p(i,n+1,k)=p(i,1,k)
+      p(i,0,k)   = p(i,n,k)
+      p(i,n+1,k) = p(i,1,k)
     end do
   end do
   !$omp end do
@@ -426,8 +437,8 @@ program main
   !$omp do
   do i = 1, m
     do j = 1, n
-      p(i,j,0)  =p(i,j,l)
-      p(i,j,l+1)=p(i,j,1)
+      p(i,j,0)   = p(i,j,l)
+      p(i,j,l+1) = p(i,j,1)
     end do
   end do
   !$omp end do
@@ -472,8 +483,8 @@ program main
   !$omp do
   do i = 1, m
     do k = 1, l
-      p(i,0,k)  =p(i,n,k)
-      p(i,n+1,k)=p(i,1,k)
+      p(i,0,k)   = p(i,n,k)
+      p(i,n+1,k) = p(i,1,k)
     end do
   end do
   !$omp end do
@@ -482,8 +493,8 @@ program main
   !$omp do
   do i = 1, m
     do j = 1, n
-      p(i,j,0)  =p(i,j,l)
-      p(i,j,l+1)=p(i,j,1)
+      p(i,j,0)   = p(i,j,l)
+      p(i,j,l+1) = p(i,j,1)
     end do
   end do
   !$omp end do
@@ -781,16 +792,16 @@ program main
   ! default periodic condition in yz-direction
   do i = 1, m
     do k = 1, l
-      p(i,0,k)  =p(i,n,k)
-      p(i,n+1,k)=p(i,1,k)
+      p(i,0,k)   = p(i,n,k)
+      p(i,n+1,k) = p(i,1,k)
     end do
   end do
 
   ! default periodic condition in xy-direction
   do i = 1, m
     do j = 1, n
-      p(i,j,0)  =p(i,j,l)
-      p(i,j,l+1)=p(i,j,1)
+      p(i,j,0)   = p(i,j,l)
+      p(i,j,l+1) = p(i,j,1)
     end do
   end do
   
@@ -1049,7 +1060,6 @@ program main
       u(m+1,j,k) =u(m-1,j,k)
       v(m+1,j,k) =v(m-1,j,k)
       w(m+1,j,k) =w(m-1,j,k)
-      ! p(m,j) =outlet_pressure
       p(m+1,j,k)=outlet_pressure   ! dummy
     end do
   end do
@@ -1293,10 +1303,10 @@ program main
   do j = 1, n
   do i = 1, m
   do k = 1, l
-   u(i,j,k)=inlet_velocity*cos(AoA/180*pai)
-   v(i,j,k)=inlet_velocity*sin(AoA/180*pai)
-   w(i,j,k)=0.
-   p(i,j,k)=outlet_pressure
+   u(i,j,k) = inlet_velocity*cos(AoA/180*pai)
+   v(i,j,k) = inlet_velocity*sin(AoA/180*pai)
+   w(i,j,k) = 0.
+   p(i,j,k) = outlet_pressure
   end do
   end do
   end do
