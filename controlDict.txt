@@ -7,20 +7,20 @@ height          = 2.000000  ! [m]
 depth           = 2.000000  ! [m]
 time            = 1.000000  ! [s]
 inlet_velocity  = 1.600000  ! [m/s]
-outlet_pressure = 0.000000  ! [guage]
+outlet_pressure = 0.000000  ! [gauge]
 AoA             = 0.000000  ! [degree]
 /
 &file_control
-istep_out       = 10001
+istep_out       = 1001 ! [tmp file]
 /
 &grid_control
 istep_max       = 1000
 /
 &porosity_control
-thickness       = 1.5
+thickness       = 2.0
 /
 &calculation_method
-nonslip         = .false.
+nonslip         = .false. ! .true. : No-slip Cond. | .false. : Slip Cond.
 /
 &directory_control
 output_folder   = "test"
